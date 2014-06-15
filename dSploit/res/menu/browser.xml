@@ -1,20 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://schemas.android.com/apk/res/android">
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >
 
     <item
         android:id="@+id/back"
-        android:title="B"
+        android:icon="@drawable/action_backward"
         android:showAsAction="always"
-        android:icon="@drawable/action_backward" />
+        android:title="B"/>
     <item
         android:id="@+id/forward"
-        android:title="F"
+        android:icon="@drawable/action_forward"
         android:showAsAction="always"
-        android:icon="@drawable/action_forward" />
+        android:title="F"/>
     <item
         android:id="@+id/reload"
-        android:title="R"
+        android:icon="@drawable/action_refresh"
         android:showAsAction="always"
-        android:icon="@drawable/action_refresh" />
+        android:title="R"/>
 
 </menu>

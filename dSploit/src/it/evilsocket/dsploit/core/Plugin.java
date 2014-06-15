@@ -26,96 +26,118 @@ import com.actionbarsherlock.view.MenuItem;
 
 import it.evilsocket.dsploit.R;
 import it.evilsocket.dsploit.net.Target;
+import it.evilsocket.dsploit.net.Target.Exploit;
 import it.evilsocket.dsploit.net.Target.Port;
 import it.evilsocket.dsploit.net.Target.Vulnerability;
+import it.evilsocket.dsploit.net.metasploit.RPCClient;
 
-public abstract class Plugin extends SherlockActivity {
-    public static final int NO_LAYOUT = -1;
+public abstract class Plugin extends SherlockActivity{
+  public static final int NO_LAYOUT = -1;
 
-    private int mNameStringId = -1;
-    private int mDescriptionStringId = -1;
-    private Target.Type[] mAllowedTargetTypes = null;
-    private int mLayoutId = 0;
-    private int mIconId = 0;
+  private int mNameStringId = -1;
+  private int mDescriptionStringId = -1;
+  private Target.Type[] mAllowedTargetTypes = null;
+  private int mLayoutId = 0;
+  private int mIconId = 0;
 
-    public Plugin( int nameStringId, int descStringId, Target.Type[] allowedTargetTypes, int layoutId, int iconResourceId) {
-        mNameStringId = nameStringId;
-        mDescriptionStringId = descStringId;
+  public Plugin(int nameStringId, int descStringId, Target.Type[] allowedTargetTypes, int layoutId, int iconResourceId){
+    mNameStringId = nameStringId;
+    mDescriptionStringId = descStringId;
 
-        mAllowedTargetTypes = allowedTargetTypes;
-        mLayoutId = layoutId;
-        mIconId = iconResourceId;
-    }
+    mAllowedTargetTypes = allowedTargetTypes;
+    mLayoutId = layoutId;
+    mIconId = iconResourceId;
+  }
 
-    public Plugin(int nameStringId, int descStringId, Target.Type[] allowedTargetTypes, int layoutId) {
-        this(nameStringId, descStringId, allowedTargetTypes, layoutId, R.drawable.action_plugin);
-    }
+  public Plugin(int nameStringId, int descStringId, Target.Type[] allowedTargetTypes, int layoutId){
+    this(nameStringId, descStringId, allowedTargetTypes, layoutId, R.drawable.action_plugin);
+  }
 
-    public int getName() {
-        return mNameStringId;
-    }
+  public int getName(){
+    return mNameStringId;
+  }
 
-    public int getDescription() {
-        return mDescriptionStringId;
-    }
+  public int getDescription(){
+    return mDescriptionStringId;
+  }
 
-    public Target.Type[] getAllowedTargetTypes() {
-        return mAllowedTargetTypes;
-    }
+  public Target.Type[] getAllowedTargetTypes(){
+    return mAllowedTargetTypes;
+  }
 
-    public int getIconResourceId() {
-        return mIconId;
-    }
+  public int getIconResourceId(){
+    return mIconId;
+  }
 
-    public boolean isAllowedTarget(Target target) {
-        for (Target.Type type : mAllowedTargetTypes)
-            if (type == target.getType())
-                return true;
+  public boolean isAllowedTarget(Target target){
+    for(Target.Type type : mAllowedTargetTypes)
+      if(type == target.getType())
+        return true;
 
-        return false;
-    }
+    return false;
+  }
 
-    public boolean hasLayoutToShow() {
-        return mLayoutId != -1;
-    }
+  public boolean hasLayoutToShow(){
+    return mLayoutId != -1;
+  }
 
-    public void onActionClick(Context context) {
-
+    @Override
+    protected void onResume() {
+        super.onResume();
     }
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setTitle(System.getCurrentTarget() + " > " + getName());
-        setContentView(mLayoutId);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+    protected void onPause() {
+        super.onPause();
     }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case android.R.id.home:
+    public void onActionClick(Context context){
 
-                onBackPressed();
+  }
 
-                return true;
+  @Override
+  public void onCreate(Bundle savedInstanceState){
+    super.onCreate(savedInstanceState);
+    setTitle(System.getCurrentTarget() + " > " + getString( mNameStringId ) );
+    setContentView(mLayoutId);
+    getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+  }
 
-            default:
-                return super.onOptionsItemSelected(item);
-        }
+  @Override
+  public boolean onOptionsItemSelected(MenuItem item){
+    switch(item.getItemId()){
+      case android.R.id.home:
+
+        onBackPressed();
+
+        return true;
+
+      default:
+        return super.onOptionsItemSelected(item);
     }
+  }
 
-    @Override
-    public void onBackPressed() {
-        super.onBackPressed();
-        overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_left);
-    }
+  @Override
+  public void onBackPressed(){
+    super.onBackPressed();
+    overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_left);
+  }
 
-    public void onTargetNewOpenPort(Target target, Port port) {
+  public void onTargetNewOpenPort(Target target, Port port){
 
-    }
+  }
 
-    public void onTargetNewVulnerability(Target target, Port port, Vulnerability vulnerability) {
+  public void onTargetNewVulnerability(Target target, Port port, Vulnerability vulnerability){
 
-    }
+  }
+
+  public void onTargetNewExploit( Target target, Vulnerability vulnerability, Exploit ex ) {
+
+  }
+
+  public void onTargetNewExploit( Target target, Exploit ex ) {
+
+  }
+
+  public void onRpcChange(RPCClient currentValue) { }
 }

@@ -20,9 +20,9 @@ package it.evilsocket.dsploit.plugins;
 
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
@@ -42,6 +42,7 @@ import java.util.ArrayList;
 import it.evilsocket.dsploit.R;
 import it.evilsocket.dsploit.core.Plugin;
 import it.evilsocket.dsploit.core.System;
+import it.evilsocket.dsploit.core.Logger;
 import it.evilsocket.dsploit.gui.dialogs.ConfirmDialog;
 import it.evilsocket.dsploit.gui.dialogs.ConfirmDialog.ConfirmDialogListener;
 import it.evilsocket.dsploit.gui.dialogs.ErrorDialog;
@@ -53,242 +54,289 @@ import it.evilsocket.dsploit.net.Target.Port;
 import it.evilsocket.dsploit.tools.NMap.SynScanOutputReceiver;
 
 public class PortScanner extends Plugin {
-    private ToggleButton mScanToggleButton = null;
-    private ProgressBar mScanProgress = null;
-    private boolean mRunning = false;
-    private ArrayList<String> mPortList = null;
-    private ArrayAdapter<String> mListAdapter = null;
-    private Receiver mScanReceiver = null;
-    private String mCustomPorts = null;
+	private ToggleButton mScanToggleButton = null;
+	private ProgressBar mScanProgress = null;
+	private boolean mRunning = false;
+	private ArrayList<String> mPortList = null;
+	private ArrayAdapter<String> mListAdapter = null;
+	private Receiver mScanReceiver = null;
+	private String mCustomPorts = null;
 
-    public PortScanner() {
-        super(
-                R.string.port_scanner,
-                R.string.port_scanner_desc,
+	public PortScanner() {
+		super(R.string.port_scanner, R.string.port_scanner_desc,
 
-                new Target.Type[]{Target.Type.ENDPOINT, Target.Type.REMOTE},
-                R.layout.plugin_portscanner,
-                R.drawable.action_scanner
-        );
+		new Target.Type[] { Target.Type.ENDPOINT, Target.Type.REMOTE },
+				R.layout.plugin_portscanner, R.drawable.action_scanner);
 
-        mPortList = new ArrayList<String>();
-        mScanReceiver = new Receiver();
+		mPortList = new ArrayList<String>();
+		mScanReceiver = new Receiver();
+	}
+
+	private void setStoppedState() {
+		System.getNMap().kill();
+		mScanProgress.setVisibility(View.INVISIBLE);
+		mRunning = false;
+		mScanToggleButton.setChecked(false);
+
+		if (mPortList.size() == 0)
+			Toast.makeText(this, getString(R.string.no_open_ports),
+					Toast.LENGTH_LONG).show();
+	}
+
+	private void setStartedState() {
+		createPortList();
+
+		System.getNMap()
+				.synScan(System.getCurrentTarget(), mScanReceiver, mCustomPorts)
+				.start();
+
+		mRunning = true;
+	}
+
+  private void createPortList() {
+    mPortList.clear();
+
+    for(Port p : System.getCurrentTarget().getOpenPorts()) {
+      String resolvedProtocol = System.getProtocolByPort(""+p.number);
+      String str;
+
+      if (resolvedProtocol != null)
+        str = p.number + " ( " + resolvedProtocol + " )";
+      else
+        str = p.protocol.toString().toLowerCase() + " : " + p.number;
+
+      if(!mPortList.contains(str))
+        mPortList.add(str);
     }
 
-    private void setStoppedState() {
-        System.getNMap().kill();
-        mScanProgress.setVisibility(View.INVISIBLE);
-        mRunning = false;
-        mScanToggleButton.setChecked(false);
+  }
 
-        if (mPortList.size() == 0)
-            Toast.makeText(this, getString(R.string.no_open_ports), Toast.LENGTH_LONG).show();
-    }
+	@Override
+	public void onCreate(Bundle savedInstanceState) {
+		SharedPreferences themePrefs = getSharedPreferences("THEME", 0);
+		Boolean isDark = themePrefs.getBoolean("isDark", false);
+		if (isDark)
+			setTheme(R.style.Sherlock___Theme);
+		else
+			setTheme(R.style.AppTheme);
+		super.onCreate(savedInstanceState);
 
-    private void setStartedState() {
-        mPortList.clear();
+		mScanToggleButton = (ToggleButton) findViewById(R.id.scanToggleButton);
+		mScanProgress = (ProgressBar) findViewById(R.id.scanActivity);
 
-        System.getNMap().synScan(System.getCurrentTarget(), mScanReceiver, mCustomPorts).start();
+		mScanToggleButton.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				if (mRunning) {
+					setStoppedState();
+				} else {
+					setStartedState();
+				}
+			}
+		});
 
-        mRunning = true;
-    }
+		ListView mScanList = (ListView) findViewById(R.id.scanListView);
 
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+		createPortList();
 
-        mScanToggleButton = (ToggleButton) findViewById(R.id.scanToggleButton);
-        mScanProgress = (ProgressBar) findViewById(R.id.scanActivity);
+		mListAdapter = new ArrayAdapter<String>(this,
+				android.R.layout.simple_list_item_1, mPortList);
+		mScanList.setAdapter(mListAdapter);
+		mScanList.setOnItemLongClickListener(new OnItemLongClickListener() {
+			@Override
+			public boolean onItemLongClick(AdapterView<?> parent, View view,
+					int position, long id) {
+				int portNumber = System.getCurrentTarget().getOpenPorts()
+						.get(position).number;
+				String url = "";
 
-        mScanToggleButton.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (mRunning) {
-                    setStoppedState();
-                } else {
-                    setStartedState();
-                }
-            }
-        }
-        );
+				if (portNumber == 80)
+					url = "http://"
+							+ System.getCurrentTarget()
+									.getCommandLineRepresentation() + "/";
 
-        ListView mScanList = (ListView) findViewById(R.id.scanListView);
+				else if (portNumber == 443)
+					url = "https://"
+							+ System.getCurrentTarget()
+									.getCommandLineRepresentation() + "/";
 
-        for (Port port : System.getCurrentTarget().getOpenPorts()) {
-            mPortList.add(port.number + " ( " + port.protocol.toString().toLowerCase() + " )");
-        }
+				else if (portNumber == 21)
+					url = "ftp://"
+							+ System.getCurrentTarget()
+									.getCommandLineRepresentation();
 
-        mListAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, mPortList);
-        mScanList.setAdapter(mListAdapter);
-        mScanList.setOnItemLongClickListener(new OnItemLongClickListener() {
-            @Override
-            public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-                int portNumber = System.getCurrentTarget().getOpenPorts().get(position).number;
-                String url = "";
+				else if (portNumber == 22)
+					url = "ssh://"
+							+ System.getCurrentTarget()
+									.getCommandLineRepresentation();
 
-                if (portNumber == 80)
-                    url = "http://" + System.getCurrentTarget().getCommandLineRepresentation() + "/";
+				else
+					url = "telnet://"
+							+ System.getCurrentTarget()
+									.getCommandLineRepresentation() + ":"
+							+ portNumber;
 
-                else if (portNumber == 443)
-                    url = "https://" + System.getCurrentTarget().getCommandLineRepresentation() + "/";
+				final String furl = url;
 
-                else if (portNumber == 21)
-                    url = "ftp://" + System.getCurrentTarget().getCommandLineRepresentation();
+				new ConfirmDialog("Open", "Open " + url + " ?",
+						PortScanner.this, new ConfirmDialogListener() {
+							@Override
+							public void onConfirm() {
+								try {
+									Intent browser = new Intent(
+											Intent.ACTION_VIEW, Uri.parse(furl));
 
-                else if (portNumber == 22)
-                    url = "ssh://" + System.getCurrentTarget().getCommandLineRepresentation();
+									PortScanner.this.startActivity(browser);
+								} catch (ActivityNotFoundException e) {
+									System.errorLogging(e);
 
-                else
-                    url = "telnet://" + System.getCurrentTarget().getCommandLineRepresentation() + ":" + portNumber;
+									new ErrorDialog(
+											getString(R.string.error),
+											getString(R.string.no_activities_for_url),
+											PortScanner.this).show();
+								}
 
-                final String furl = url;
+							}
 
-                new ConfirmDialog(
-                        "Open",
-                        "Open " + url + " ?",
-                        PortScanner.this,
-                        new ConfirmDialogListener() {
-                            @Override
-                            public void onConfirm() {
-                                try {
-                                    Intent browser = new Intent(Intent.ACTION_VIEW, Uri.parse(furl));
+							@Override
+							public void onCancel() {
+							}
+						}).show();
 
-                                    PortScanner.this.startActivity(browser);
-                                } catch (ActivityNotFoundException e) {
-                                    System.errorLogging("PORTSCANNER", e);
+				return false;
+			}
+		});
+	}
 
-                                    new ErrorDialog(getString(R.string.error), getString(R.string.no_activities_for_url), PortScanner.this).show();
-                                }
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		MenuInflater inflater = getSupportMenuInflater();
+		inflater.inflate(R.menu.port_scanner, menu);
+		return super.onCreateOptionsMenu(menu);
+	}
 
-                            }
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		switch (item.getItemId()) {
+		case R.id.select_ports:
 
-                            @Override
-                            public void onCancel() {
-                            }
-                        }
-                ).show();
+			new InputDialog(getString(R.string.select_ports),
+					getString(R.string.enter_ports_list), this,
+					new InputDialogListener() {
+						@Override
+						public void onInputEntered(String input) {
+							input = input.trim();
 
-                return false;
-            }
-        });
-    }
+							if (!input.isEmpty()) {
+								String[] ports = input.split("[^\\d]+");
+								for (String port : ports) {
+									try {
+										if (port.isEmpty())
+											throw new Exception(
+													getString(R.string.invalid_port_)
+															+ port + "'.");
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        MenuInflater inflater = getSupportMenuInflater();
-        inflater.inflate(R.menu.port_scanner, menu);
-        return super.onCreateOptionsMenu(menu);
-    }
+										else {
+											int iport = Integer.parseInt(port);
+											if (iport <= 0 || iport > 65535)
+												throw new Exception(
+														getString(R.string.port_must_be_greater));
+										}
+									} catch (Exception e) {
+										new ErrorDialog("Error", e.toString(),
+												PortScanner.this).show();
+										return;
+									}
+								}
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.select_ports:
+								mCustomPorts = "";
+								for (int i = 0, last = ports.length - 1; i < ports.length; i++) {
+									mCustomPorts += ports[i];
+									if (i != last)
+										mCustomPorts += ",";
+								}
 
-                new InputDialog(getString(R.string.select_ports), getString(R.string.enter_ports_list), this, new InputDialogListener() {
-                    @Override
-                    public void onInputEntered(String input) {
-                        input = input.trim();
+								if (mCustomPorts.isEmpty()) {
+									mCustomPorts = null;
+									new ErrorDialog(getString(R.string.error),
+											getString(R.string.invalid_ports),
+											PortScanner.this).show();
+								}
 
-                        if (!input.isEmpty()) {
-                            String[] ports = input.split("[^\\d]+");
-                            for (String port : ports) {
-                                try {
-                                    if (port.isEmpty())
-                                        throw new Exception(getString(R.string.invalid_port_) + port + "'.");
+								Logger.debug("mCustomPorts = " + mCustomPorts);
+							} else
+								new ErrorDialog(getString(R.string.error),
+										getString(R.string.empty_port_list),
+										PortScanner.this).show();
+						}
+					}).show();
 
-                                    else {
-                                        int iport = Integer.parseInt(port);
-                                        if (iport <= 0 || iport > 65535)
-                                            throw new Exception(getString(R.string.port_must_be_greater));
-                                    }
-                                } catch (Exception e) {
-                                    new ErrorDialog("Error", e.toString(), PortScanner.this).show();
-                                    return;
-                                }
-                            }
+			return true;
 
-                            mCustomPorts = "";
-                            for (int i = 0, last = ports.length - 1; i < ports.length; i++) {
-                                mCustomPorts += ports[i];
-                                if (i != last)
-                                    mCustomPorts += ",";
-                            }
+		default:
+			return super.onOptionsItemSelected(item);
+		}
+	}
 
-                            if (mCustomPorts.isEmpty()) {
-                                mCustomPorts = null;
-                                new ErrorDialog(getString(R.string.error), getString(R.string.invalid_ports), PortScanner.this).show();
-                            }
+	@Override
+	public void onBackPressed() {
+		setStoppedState();
+		super.onBackPressed();
+	}
 
-                            Log.d("PORT", "mCustomPorts = " + mCustomPorts);
-                        } else
-                            new ErrorDialog(getString(R.string.error), getString(R.string.empty_port_list), PortScanner.this).show();
-                    }
-                }).show();
+	private class Receiver extends SynScanOutputReceiver {
+		@Override
+		public void onStart(String commandLine) {
+			super.onStart(commandLine);
 
-                return true;
+			PortScanner.this.runOnUiThread(new Runnable() {
+				@Override
+				public void run() {
+					mRunning = true;
+					mScanProgress.setVisibility(View.VISIBLE);
+				}
+			});
+		}
 
-            default:
-                return super.onOptionsItemSelected(item);
-        }
-    }
+		@Override
+		public void onEnd(int exitCode) {
+			super.onEnd(exitCode);
 
-    @Override
-    public void onBackPressed() {
-        setStoppedState();
-        super.onBackPressed();
-    }
+			PortScanner.this.runOnUiThread(new Runnable() {
+				@Override
+				public void run() {
+					setStoppedState();
+				}
+			});
+		}
 
-    private class Receiver extends SynScanOutputReceiver {
-        @Override
-        public void onStart(String commandLine) {
-            super.onStart(commandLine);
+		@Override
+		public void onPortFound(String port, String protocol) {
+			final int    portNumber = Integer.parseInt(port);
+			final String portProtocol = protocol;
+      final String resolvedProtocol = System.getProtocolByPort(port);
 
-            PortScanner.this.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    mRunning = true;
-                    mScanProgress.setVisibility(View.VISIBLE);
-                }
-            });
-        }
+      System.addOpenPort(portNumber, Network.Protocol.fromString(protocol));
 
-        @Override
-        public void onEnd(int exitCode) {
-            super.onEnd(exitCode);
+			PortScanner.this.runOnUiThread(new Runnable() {
+				@Override
+				public void run() {
+          String entry;
 
-            PortScanner.this.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    setStoppedState();
-                }
-            });
-        }
+					if (resolvedProtocol != null)
+						entry = portNumber + " ( " + resolvedProtocol + " )";
 
-        @Override
-        public void onPortFound(String port, String protocol) {
-            final String openPort = port;
-            final String portProto = protocol;
+					else
+						entry = portProtocol + " : " + portNumber;
 
-            PortScanner.this.runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    String proto = System.getProtocolByPort(openPort),
-                            entry = openPort;
-
-                    if (proto != null)
-                        entry = openPort + " ( " + proto + " )";
-
-                    else
-                        entry = portProto + " : " + openPort;
-
-                    // add open port to the listview and notify the environment about the event
-                    mPortList.add(entry);
-                    mListAdapter.notifyDataSetChanged();
-
-                    System.addOpenPort(Integer.parseInt(openPort), Network.Protocol.fromString(portProto));
-                }
-            });
-        }
-    }
+					// add open port to the listview and notify the environment
+					// about the event
+          if(!mPortList.contains(entry)) {
+					  mPortList.add(entry);
+					  mListAdapter.notifyDataSetChanged();
+          }
+				}
+			});
+		}
+	}
 }

@@ -18,8 +18,10 @@
  */
 package it.evilsocket.dsploit;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -45,6 +47,13 @@ public class ActionActivity extends SherlockListActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        SharedPreferences themePrefs = getSharedPreferences("THEME", 0);
+        Boolean isDark = themePrefs.getBoolean("isDark", false);
+
+        if (isDark)
+            setTheme(R.style.Sherlock___Theme);
+        else
+            setTheme(R.style.AppTheme);
 
         if (System.getTargets() != null && System.getTargets().size() > 0 && System.getCurrentTarget() != null) {
             setTitle("dSploit > " + System.getCurrentTarget());
@@ -77,10 +86,8 @@ public class ActionActivity extends SherlockListActivity {
     protected void onListItemClick(ListView l, View v, int position, long id) {
         super.onListItemClick(l, v, position, id);
 
-
         if (System.checkNetworking(this)) {
             Plugin plugin = mAvailable.get(position);
-
             System.setCurrentPlugin(plugin);
 
             if (plugin.hasLayoutToShow()) {
@@ -107,6 +114,7 @@ public class ActionActivity extends SherlockListActivity {
             super(ActionActivity.this, R.layout.actions_list_item, mAvailable);
         }
 
+        @SuppressLint("NewApi")
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
             View row = convertView;
@@ -115,7 +123,8 @@ public class ActionActivity extends SherlockListActivity {
             if (row == null) {
                 LayoutInflater inflater = (LayoutInflater) ActionActivity.this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
                 row = inflater.inflate(R.layout.actions_list_item, parent, false);
-
+                if (getSharedPreferences("THEME", 0).getBoolean("isDark", false))
+                    row.setBackground(getResources().getDrawable(R.drawable.card_background_dark));
                 holder = new ActionHolder();
 
                 holder.icon = (ImageView) (row != null ? row.findViewById(R.id.actionIcon) : null);

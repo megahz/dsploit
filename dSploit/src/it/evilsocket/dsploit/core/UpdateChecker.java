@@ -20,44 +20,55 @@ package it.evilsocket.dsploit.core;
 
 import android.content.Context;
 import android.content.Intent;
-import android.util.Log;
 
-public class UpdateChecker extends Thread {
-    private static final String TAG = "UpdateChecker";
+public class UpdateChecker extends Thread
+{
+  public static final String UPDATE_CHECKING = "UpdateChecker.action.CHECKING";
+  public static final String UPDATE_AVAILABLE = "UpdateChecker.action.UPDATE_AVAILABLE";
+  public static final String RUBY_AVAILABLE = "UpdateChecker.action.RUBY_AVAILABLE";
+  public static final String GEMS_AVAILABLE = "UpdateChecker.action.GEMS_AVAILABLE";
+  public static final String MSF_AVAILABLE = "UpdateChecker.action.MSF_AVAILABLE";
+  public static final String UPDATE_NOT_AVAILABLE = "UpdateChecker.action.UPDATE_NOT_AVAILABLE";
+  public static final String AVAILABLE_VERSION = "UpdateChecker.data.AVAILABLE_VERSION";
 
-    public static final String UPDATE_CHECKING = "UpdateChecker.action.CHECKING";
-    public static final String UPDATE_AVAILABLE = "UpdateChecker.action.UPDATE_AVAILABLE";
-    public static final String UPDATE_NOT_AVAILABLE = "UpdateChecker.action.UPDATE_NOT_AVAILABLE";
-    public static final String AVAILABLE_VERSION = "UpdateChecker.data.AVAILABLE_VERSION";
+  private Context mContext = null;
 
-    private Context mContext = null;
+  public UpdateChecker(Context context){
+    super("UpdateChecker");
 
-    public UpdateChecker(Context context) {
-        super("UpdateChecker");
+    mContext = context;
+  }
 
-        mContext = context;
-    }
+  private void send(String msg, String extra, String value){
+    Intent intent = new Intent(msg);
 
-    private void send(String msg, String extra, String value) {
-        Intent intent = new Intent(msg);
+    if(extra != null && value != null)
+      intent.putExtra(extra, value);
 
-        if (extra != null && value != null)
-            intent.putExtra(extra, value);
+    mContext.sendBroadcast(intent);
+  }
 
-        mContext.sendBroadcast(intent);
-    }
+  public void run(){
 
-    public void run() {
+    send(UPDATE_CHECKING, null, null);
 
-        send(UPDATE_CHECKING, null, null);
+    Logger.debug("Service started.");
 
-        Log.d(TAG, "Service started.");
+    boolean checkMsfUpdates = System.getSettings().getBoolean("MSF_ENABLED", true) &&
+            System.getSettings().getBoolean("MSF_CHECK_UPDATES", true) &&
+            Shell.isRootGranted();
 
-        if (System.getUpdateManager().isUpdateAvailable()) {
-            send(UPDATE_AVAILABLE, AVAILABLE_VERSION, System.getUpdateManager().getRemoteVersion());
-        } else
-            send(UPDATE_NOT_AVAILABLE, null, null);
+    if(UpdateService.isUpdateAvailable())
+      send(UPDATE_AVAILABLE, AVAILABLE_VERSION, UpdateService.getRemoteVersion());
+    else if(checkMsfUpdates && UpdateService.isRubyUpdateAvailable())
+      send(RUBY_AVAILABLE, null, null);
+    else if(checkMsfUpdates && UpdateService.isMsfUpdateAvailable()) {
+      send(MSF_AVAILABLE, null, null);
+    } else if(checkMsfUpdates && UpdateService.isGemUpdateAvailable()){
+      send(GEMS_AVAILABLE, null, null);
+    } else
+      send(UPDATE_NOT_AVAILABLE, null, null);
 
-        Log.d(TAG, "Service stopped.");
-    }
+    Logger.debug("Service stopped.");
+  }
 }

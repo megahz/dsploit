@@ -23,84 +23,70 @@ import android.content.Context;
 import java.io.File;
 import java.io.IOException;
 
+import it.evilsocket.dsploit.core.Logger;
 import it.evilsocket.dsploit.core.Shell;
 import it.evilsocket.dsploit.core.Shell.OutputReceiver;
 import it.evilsocket.dsploit.core.System;
 
-public class Tool {
-    private static final String TAG = "Tool";
+public class Tool
+{
+  protected String mPath = null;
+  protected String mBasename = null;
+  protected String mDirectory = null;
 
-    protected File mFile = null;
-    protected String mName = null;
-    protected String mDirName = null;
-    protected String mFileName = null;
-    protected String mLibPath = null;
-    protected Context mAppContext = null;
+  public Tool(String name, Context context){
+    File stat;
 
-    @SuppressWarnings("ConstantConditions")
-    public Tool(String name, Context context) {
-        mAppContext = context;
-        mLibPath = mAppContext.getFilesDir().getAbsolutePath() + "/tools/libs";
-        mFileName = mAppContext.getFilesDir().getAbsolutePath() + "/tools/" + name;
-        mFile = new File(mFileName);
-        mName = mFile.getName();
-        mDirName = mFile.getParent();
+    mPath = context.getFilesDir().getAbsolutePath() + "/tools/" + name;
+    mDirectory = mPath.substring(0, mPath.lastIndexOf('/'));
+    stat = new File(mPath);
+    if(!stat.exists()) {
+      Logger.error("cannot find tool: '"+name+"'");
+      Logger.error(mPath +": No such file or directory");
+      Logger.error("this tool will be disabled.");
+      mPath = "false";
+    } else {
+      mBasename = stat.getName();
+    }
+  }
+
+  public Tool(String name){
+    mPath = mBasename = name;
+  }
+
+  public void run(String args, OutputReceiver receiver) throws IOException, InterruptedException{
+    Shell.exec(mPath + " " + args, receiver);
+  }
+
+  public void run(String args) throws IOException, InterruptedException{
+    run(args, null);
+  }
+
+  public Thread async(String args, OutputReceiver receiver){
+    return Shell.async(mPath + " " + args, receiver);
+  }
+
+  public Thread async(String args, OutputReceiver receiver, boolean chdir) {
+    if(chdir)
+      return Shell.async("cd '" + mDirectory + "' && " + mPath + " " + args, receiver);
+    else
+      return Shell.async(mPath + " " + args, receiver);
+  }
+
+  public boolean kill(){
+    return kill("9");
+  }
+
+  public boolean kill(String signal){
+    try{
+      Shell.exec("killall -" + signal + " " + mBasename);
+
+      return true;
+    }
+    catch(Exception e){
+      System.errorLogging(e);
     }
 
-    public Tool(String name) {
-        mName = name;
-    }
-
-    public void run(String args, OutputReceiver receiver) throws IOException, InterruptedException {
-        String cmd = null;
-
-        if (mAppContext != null)
-            cmd = "cd " + mDirName + " && ./" + mName + " " + args;
-        else
-            cmd = mName + " " + args;
-
-        Shell.exec(cmd, receiver);
-    }
-
-    public void run(String args) throws IOException, InterruptedException {
-        run(args, null);
-    }
-
-    public Thread async(String args, OutputReceiver receiver) {
-        String cmd = null;
-
-        if (mAppContext != null)
-            cmd = "cd " + mDirName + " && ./" + mName + " " + args;
-        else
-            cmd = mName + " " + args;
-
-        return Shell.async(cmd, receiver);
-    }
-
-    public Thread asyncStatic(String args, OutputReceiver receiver) {
-        String cmd = null;
-
-        if (mAppContext != null)
-            cmd = "cd " + mDirName + " && ./" + mName + " " + args;
-        else
-            cmd = mName + " " + args;
-
-        return Shell.async(cmd, receiver, false);
-    }
-
-    public boolean kill() {
-        return kill("9");
-    }
-
-    public boolean kill(String signal) {
-        try {
-            Shell.exec("killall -" + signal + " " + mName);
-
-            return true;
-        } catch (Exception e) {
-            System.errorLogging(TAG, e);
-        }
-
-        return false;
-    }
+    return false;
+  }
 }
