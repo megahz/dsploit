@@ -1,8 +1,0 @@
-obj
-libs/armeabi
-libs/x86
-libs/mips
-dist
-*.jks
-*.tar.*
-*.zip

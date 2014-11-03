@@ -1,40 +1,14 @@
-dSploit - An Android network penetration suite.
-==============================
+dSploit merges with ZImperium zANTI2
+==
 
-Copyleft of Simone Margaritelli aka evilsocket.
+![](https://www.zimperium.com/images/zanti/hero.jpg)
 
-- <http://www.dsploit.net/>
-- <http://www.evilsocket.net/>
+Some of you, the ones who know me personally, already know that starting from the last July I've become part of the [ZImperium](https://www.zimperium.com/) family as a software developer and security researcher. 
+I've been "unofficially" already working/hacking with Elia, one of the two founders for 4 years, during this summer I met Zuk in Amesterdam and later on all of them in Tel Aviv.
 
-[![Click here to lend your support to: dSploit and make a donation at www.pledgie.com](http://www.pledgie.com/campaigns/22257.png?skin_name=chrome)](http://www.pledgie.com/campaigns/22257)
+We've talked a lot about this and finally we decided to join our efforts to create a better, faster and **free** product.
 
--------------
+So I'm very proud to announce that dSploit was merged into zANTI, and the new version will (actually already is) zANTI2 which you can download **[here](https://s3.amazonaws.com/zANTI/zANTI2.apk)**. 
+**zANTI2** will be released as an **open source** software in the near future, meaning that the community, towards which I'm deeply thankful, will continue to be able to contribute, test beta features and so forth.
 
-dSploit is an Android network analysis and penetration suite which aims to offer to IT security experts/geeks
-**the most complete and advanced professional toolkit** to perform network security assesments on a mobile device.
-
-Once dSploit is started, you will be able to easily map your network, fingerprint alive hosts operating systems
-and running services, search for **known vulnerabilities**, crack logon procedures of many tcp protocols, perform
-man in the middle attacks such as **password sniffing** ( with common protocols dissection ), real time **traffic
-manipulation**, etc, etc .
-
-This application is still in **beta stage**, a stable release will be available as soon as possible, but expect
-some crash or strange behaviour until then, in any case, feel free to submit an issue here on GitHub.
-
-Requirements
--------------
-
-- An Android device with at least the 2.3 ( Gingerbread ) version of the OS.
-- The device **must be rooted**.
-- The device must have a BusyBox **full install**, this means with **every** utility installed ( not the partial installation ).
-
-
-Disclaimer
--------------
-
-This application is not to be used for any purposes other than to demonstrate its functions, and must only be used on networks for which you have permission to do so. Any other use is not the responsibility of the developer.In other words, don't be stupid, and don't direct angry people towards me.
-
-License
--------------
-
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+**If you have an old version of dSploit ( anything rather than the last nightly build ), please remove it and download [zANTI2](https://s3.amazonaws.com/zANTI/zANTI2.apk) manually to have the latest code updates and features.**
