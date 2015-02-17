@@ -12,3 +12,7 @@ So I'm very proud to announce that dSploit was merged into zANTI, and the new ve
 **zANTI2** will be released as an **open source** software in the near future, meaning that the community, towards which I'm deeply thankful, will continue to be able to contribute, test beta features and so forth.
 
 **If you have an old version of dSploit ( anything rather than the last nightly build ), please remove it and download [zANTI2](https://s3.amazonaws.com/zANTI/zANTI2.apk) manually to have the latest code updates and features.**
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/evilsocket/dsploit/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
